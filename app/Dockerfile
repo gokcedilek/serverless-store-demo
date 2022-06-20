@@ -12,6 +12,13 @@ COPY . .
 # Install production dependencies.
 RUN pip install --no-cache-dir -r requirements-docker.txt
 
+# set the environment variables
+ENV GCP_PROJECT=ubc-serverless-compliance
+ENV PUBSUB_TOPIC_NEW_PRODUCT=new-product
+ENV PUBSUB_TOPIC_PAYMENT_PROCESS=payment-process
+ENV GCS_BUCKET=serverless-store-bucket-2-gokce
+ENV FIREBASE_CONFIG=firebase_config.json
+
 # Run the web service on container startup. Here we use the gunicorn
 # webserver, with one worker process and 8 threads.
 # For environments with multiple CPU cores, increase the number of workers
