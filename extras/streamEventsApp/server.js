@@ -49,11 +49,10 @@ app.get(`/`, (req, res) => {
 
 app.post(`/stream`, async (req, res) => {
   const tracer = opentelemetry.trace.getTracer('basic');
-  // const messageBuffer = Buffer.from(req.body.message.data, 'base64');
-  // const messageString = JSON.stringify(messageBuffer);
-  // console.log('message string: ', messageString);
-  // const message = JSON.parse(messageString);
-  // console.log('message: ', req.body.message.data);
+  const messageString = Buffer.from(req.body.message.data, `base64`).toString();
+  const message = JSON.parse(messageString);
+  console.log('streamEvents message string: ', messageString);
+  console.log('streamEvents message: ', message);
 
   // const ctx = propagator.extract(
   //   ROOT_CONTEXT,
@@ -64,7 +63,7 @@ app.post(`/stream`, async (req, res) => {
 
   // const span = tracer.startSpan('stream to bigquery', undefined, ctx);
   const span = tracer.startSpan('stream to bigquery');
-  span.setAttribute('userToken', data.carrier.uid);
+  // span.setAttribute('userToken', data.carrier.uid);
 
   try {
     // const parsedMessage = {
@@ -74,6 +73,17 @@ app.post(`/stream`, async (req, res) => {
     // };
     // await table.insert(parsedMessage);
     // console.log('streamEvents successfully saved: ', parsedMessage);
+    console.log(
+      'streamEvents event_type: ',
+      message.eventType,
+      ' event_context: ',
+      message.event_context
+    );
+    await table.insert({
+      eventType: message.event_type,
+      createdTime: message.created_time,
+      context: JSON.stringify(message.event_context),
+    });
     span.addEvent('streamEvents succeeded!');
     span.end();
     res.send(200);

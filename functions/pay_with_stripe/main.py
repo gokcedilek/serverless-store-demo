@@ -74,8 +74,6 @@ def pay_with_stripe(data, context):
                                           kind=trace.SpanKind.CONSUMER) as link_target:
             userToken = carrier.get('uid')
             link_target.set_attribute("userToken", userToken)
-            logging.info("pay_with_stripe link_target context: ")
-            logging.info(link_target.get_span_context())
 
             with tracer.start_as_current_span("process_with_payment_first_link",
                                               kind=trace.SpanKind.CONSUMER) as first_link:
@@ -101,10 +99,13 @@ def pay_with_stripe(data, context):
             
                 firestore.collection('orders').document(order_id).set(order_data)
                 logging.info("pay_with_stripe updated order in firestore!")
-                logging.info("process_with_payment_first_link context: ")
-                logging.info(first_link.get_span_context())
-                # child_ctx = baggage.set_baggage("current_context", "child")
                 first_link.add_event(name="update firestore")
+                
+                # test running raw queries for logging
+                orders = firestore.collection('orders').where(u'shipping.city', u'==', 'Vancouver').get()
+                logging.info("list by city: ")
+                for order in orders:
+                    logging.info(f'{order.id} => {order.to_dict()}')
 
             with tracer.start_as_current_span("process_with_payment_second_link",
                                               kind=trace.SpanKind.CONSUMER) as second_link:
@@ -122,10 +123,8 @@ def pay_with_stripe(data, context):
                     },
                     carrier=carrier
                 )
-                logging.info("pay_with_stripe published payment completed event!")
+                logging.info("pay_with_stripe published payment completed event!!")
                 second_link.add_event(name="publish payment completed event")
-                logging.info("process_with_payment_second_link context: ")
-                logging.info(second_link.get_span_context())
 
     return ''
 
